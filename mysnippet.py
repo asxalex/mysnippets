@@ -133,33 +133,14 @@ if __name__ == "__main__":
         main = BaseWindow(main=True)
         y, x = main.getWindow().getmaxyx()
         set_win()
-        #main.getWindow().box(1)
-        #win1 = BaseWindow(5,5, 24,40)
-        #win2 = BaseWindow(20,20, 20, 20)
-
-        #editwin = BaseWindow(20,0, 40,60)
-        #editwin.getWindow().box(1)
-        #edit = textpad.Textbox(editwin.getWindow())
-
-        # itemlist = ItemList(0, 0, 40,20)
-        # itemlist.setItem(["hello", "world"])
-        # itemlist.getWindow().box(1)
-        # itemlist.redraw()
-        # itemlist.loop()
         width = 20
         edit = BaseWindow(width+1,0, y,x-(width+1))
 
         itemlist = MyItemList(0, 0, y,width, mainwin = main)
-        #itemlist.setItem(["snippet1", "snippet2", "snippet3"])
         itemlist.getWindow().box()
         itemlist.redraw()
         itemlist.loop(edit)
 
-        #win1.display_info("abcdefghijklmnopqrst")
-        win1input = win1.get_ch()
-        #win2.display_info(win1input)
-        win2.get_ch()
-        main.get_ch()
     except Exception as e:
         print(type(e))
         print(e)
