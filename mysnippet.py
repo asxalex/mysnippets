@@ -50,6 +50,7 @@ class MyItemList(ItemList):
         dialog = YesNoDialog(mainwindow=self.main_WIN)
         a = dialog.promptYesOrNo("sure to quit?")
         dialog.clear()
+        self.redraw()
         #print(a)
         return a
 
@@ -57,6 +58,7 @@ class MyItemList(ItemList):
         process = ProcessDialog(mainwindow=self.main_WIN)
         a = process.showProcessBar("the process is")
         process.clear()
+        self.redraw()
         return True
 
     def nextItem(self, *args, **kwargs):
