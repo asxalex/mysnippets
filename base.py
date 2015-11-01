@@ -73,6 +73,18 @@ class BaseWindow(object):
 
         self.window.refresh()
 
+    def get_param(self, y=2, x=2, prompt_string=None, prompt=True, length=20):
+        if prompt_string is not None:
+            self.window.addstr(y, x, prompt_string)
+            self.window.refresh()
+        self.window.nodelay(0)
+        if prompt:
+            curses.echo()
+        input = self.window.getstr(y, x, length)
+        curses.noecho()
+        self.window.nodelay(1)
+        return input
+
     def get_ch(self):
         self.window.nodelay(0)
         ch = self.window.getch()

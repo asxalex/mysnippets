@@ -16,7 +16,7 @@ import sqlite3
 
 from base import BaseWindow
 from itemlist import ItemList
-from dialog import YesNoDialog, ProcessDialog
+from dialog import YesNoDialog, ProcessDialog, InputDialog
 
 class MyItemList(ItemList):
     def __init__(self, begin_x=0, begin_y=0, height=10, width=10, selected=2, normal=1, mainwin=None):
@@ -33,6 +33,9 @@ class MyItemList(ItemList):
 
         self.addTrigger("p", "process")
         self.connect("process", self.processbar)
+
+        self.addTrigger("i", "input")
+        self.connect("input", self.inputdia)
         
         self.conn = sqlite3.connect("./snippet.db")
 
@@ -64,6 +67,14 @@ class MyItemList(ItemList):
         a = process.showProcessBar("the process is")
         process.clear()
         self.redraw()
+        return True
+
+    def inputdia(self, *args):
+        inputdialog = InputDialog(mainwindow=self.main_WIN)
+        result = inputdialog.showInput(["name", "age", "gender", "hello", "world"], "fill the info:")
+        inputdialog.clear()
+        self.redraw()
+        print(result)
         return True
 
 
