@@ -92,7 +92,13 @@ class ProcessDialog(Dialog):
             self.sure = True
 
 class YesNoDialog(Dialog):
-    def __init__(self, width=50, height=20, mainwindow=None):
+    def __init__(self, width=50, height=10, mainwindow=None):
+        if mainwindow is not None:
+            maxy, maxx = mainwindow.getWindow().getmaxyx()
+            if width > maxx:
+                width = maxx
+            if height > maxy:
+                height = maxy
         super(YesNoDialog, self).__init__(width, height, mainwindow)
 
     def promptYesOrNo(self, text):
