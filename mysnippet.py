@@ -66,23 +66,6 @@ class MyItemList(ItemList):
         self.redraw()
         return True
 
-#    def nextItem(self, *args, **kwargs):
-#        if self.index == len(self.items) - 1:
-#            return
-#        self.index += 1
-#        if self.index >= self.last:
-#            self.last += 1
-#            self.first += 1
-#        self.redraw()
-#
-#    def prevItem(self, *args, **kwargs):
-#        if self.index == 0:
-#            return
-#        self.index -= 1
-#        if self.index < self.first:
-#            self.last -= 1
-#            self.first -= 1
-#        self.redraw()
 
     def goLeft(self, win):
         index = self.index
