@@ -26,7 +26,7 @@ class Logger(object):
         filehandler = logging.FileHandler(filename)
         filehandler.setFormatter(formatter)
         self.logger.addHandler(filehandler)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.INFO)
         
     def getlogger(self):
         return self.logger

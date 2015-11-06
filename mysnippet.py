@@ -18,6 +18,8 @@ from base import BaseWindow
 from itemlist import ItemList
 from dialog import YesNoDialog, ProcessDialog, InputDialog
 
+import editor
+
 class MyItemList(ItemList):
     def __init__(self, begin_x=0, begin_y=0, height=10, width=10, selected=2, normal=1, mainwin=None):
         super(MyItemList, self).__init__(begin_x, begin_y, height, width, selected, normal, mainwin)
@@ -45,7 +47,6 @@ class MyItemList(ItemList):
         titles = cursor.fetchall()
         self.results = [[i[0], i[1]] for i in titles]
         
-        print("here2")
         testitem = "abcdefghijklmnopqrstuvwxyzabcdefghi"
         #self.setItem([res[1] for res in self.results])
 
@@ -74,7 +75,6 @@ class MyItemList(ItemList):
         result = inputdialog.showInput(["name", "age", "gender", "hello", "world"], "fill the info:")
         inputdialog.clear()
         self.redraw()
-        print(result)
         return True
 
 
@@ -87,18 +87,16 @@ class MyItemList(ItemList):
         content = cursor.fetchone()[0]
         cursor.close()
 
-        pad = textpad.Textbox(win.getWindow(), insert_mode=False)
+        (x1, y1) = win.leftup
+        (x2, y2) = win.rightbottom
+        #edit = editor.Editor(win.getWindow(), win_location=(y1, x1), win_size=(y2-y1, x2-x1))
+        edit = editor.Editor(win.getWindow(), win_location=(y1, x1), win_size=(y2-y1, x2-x1))
         #pad.stripspaces = 0
-        win.getWindow().clear()
-        win.display_info(content, 0,1)
-        pad.edit()
-
-        res = pad.gather()
-
-        cursor = self.conn.cursor()
-        sql = "update snippet set content=? where id=?;"
-        cursor.execute(sql, (res, iid))
-        self.conn.commit()
+        #cursor = self.conn.cursor()
+        #sql = "update snippet set content=? where id=?;"
+        #cursor.execute(sql, (res, iid))
+        #self.conn.commit()
+        print(edit)
 
     def newSnippet(self, whatever):
         win = BaseWindow()

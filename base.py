@@ -45,6 +45,10 @@ class BaseWindow(object):
 
         #print(self.window.attr())
 
+    def display_raw(self, string, x, y, colorpair=1):
+        self.window.addstr(y, x, string, curses.color_pair(colorpair))
+        self.window.refresh()
+
     def display_info(self, string, x=-1, y=-1, colorpair=1, padding=0):
         if x != -1 or y != -1:
             self.window.addstr(y, x, string, curses.color_pair(colorpair))
