@@ -12,6 +12,13 @@
 import logging
 
 _LOGGERS = []
+
+_LEVEL_MAP = {
+        "debug": logging.DEBUG,
+        "info": logging.INFO,
+        "error": logging.ERROR,
+        "critical": logging.CRITICAL,
+        }
 class Logger(object):
     def __init__(self, name, filename=None):
         logger = logging.getLogger(name)
@@ -27,6 +34,10 @@ class Logger(object):
         filehandler.setFormatter(formatter)
         self.logger.addHandler(filehandler)
         self.logger.setLevel(logging.INFO)
+
+    def setLevel(self, level):
+        a = _LEVEL_MAP.get(level, logging.DEBUG)
+        self.logger.setLevel(a)
         
     def getlogger(self):
         return self.logger

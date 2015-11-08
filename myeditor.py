@@ -118,6 +118,9 @@ class Editor(BaseWindow):
         self.last = min([self.height-1, len(self.text)])
         self.cursor = (self.box,0)
 
+        # determine if the editor is exiting...
+        self.exit = False
+
     def openFile(self, filename):
         try:
             fp = open(filename)
@@ -137,6 +140,9 @@ class Editor(BaseWindow):
                 self.normalCommand(a)
             elif self.mode == _INSERT_MODE:
                 self.insertCommand(a)
+            if self.exit is True:
+                break
+        return '\n'.join(self.text)
 
     def save(self):
         if self.filename is None:
@@ -272,10 +278,10 @@ class Editor(BaseWindow):
             else:
                 self.displayStatusCommand("not in a file")
         elif a == "q!":
-            sys.exit(0)
+            self.exit = True
         elif a == "q":
             if self.clear:
-                sys.exit(0)
+                self.exit = True
             else:
                 self.displayStatusCommand("file changed but not saved")
         elif a.startswith("!"):

@@ -17,8 +17,16 @@ import sqlite3
 from base import BaseWindow
 from itemlist import ItemList
 from dialog import YesNoDialog, ProcessDialog, InputDialog
+from myeditor import Editor
+from log import Logger
 
-import editor
+import uuid
+
+#import editor
+
+logger = Logger("mysnippet")
+logger.setLevel("debug")
+logger = logger.getlogger()
 
 class MyItemList(ItemList):
     def __init__(self, begin_x=0, begin_y=0, height=10, width=10, selected=2, normal=1, mainwin=None):
@@ -45,12 +53,15 @@ class MyItemList(ItemList):
         cursor.execute("select id, title from snippet;")
 
         titles = cursor.fetchall()
-        self.results = [[i[0], i[1]] for i in titles]
-        
-        testitem = "abcdefghijklmnopqrstuvwxyzabcdefghi"
-        #self.setItem([res[1] for res in self.results])
+        if len(titles) > 0:
+            self.results = [[i[0], i[1]] for i in titles]
+        else:
+            self.results = []
+        logger.debug("%s" % self.results)
 
-        self.setItem([a for a in testitem])
+        #testitem = "abcdefghijklmnopq"
+        #self.setItem([res[1] for res in self.results])
+        #self.setItem([a for a in testitem])
 
         cursor.close()
         self.back = False
@@ -77,30 +88,34 @@ class MyItemList(ItemList):
         self.redraw()
         return True
 
-
     def goLeft(self, win):
         index = self.index
+        if index < 0 or index >= len(self.items):
+            return
         iid = self.results[index][0]
         cursor = self.conn.cursor()
-        cursor.execute("select content from snippet where id = ?;", (iid,))
+        cursor.execute("select filename from snippet where id = ?;", (iid,))
         
         content = cursor.fetchone()[0]
         cursor.close()
 
         (x1, y1) = win.leftup
         (x2, y2) = win.rightbottom
-        #edit = editor.Editor(win.getWindow(), win_location=(y1, x1), win_size=(y2-y1, x2-x1))
-        edit = editor.Editor(win.getWindow(), win_location=(y1, x1), win_size=(y2-y1, x2-x1))
-        #pad.stripspaces = 0
-        #cursor = self.conn.cursor()
-        #sql = "update snippet set content=? where id=?;"
-        #cursor.execute(sql, (res, iid))
-        #self.conn.commit()
-        print(edit)
+        edit = Editor(20,0, y,x-(width+1), box=False)
+        edit.openFile(content)
+        text = edit.loop()
+        print(text)
 
     def newSnippet(self, whatever):
-        win = BaseWindow()
-        
+        dialog = InputDialog()
+        res = dialog.showInput(["title", "alias"])
+        dialog.clear()
+        uid = str(uuid.uuid1()).replace("-", "")
+        sql = "insert into snippet (title, alias, filename) values (?, ?, ?);"
+        cursor = self.conn.cursor()
+        cursor.execute(sql, (res["title"], res["alias"], uid))
+        self.conn.commit()
+        self.addItem(res["title"])
 
 def set_win():
     curses.start_color()

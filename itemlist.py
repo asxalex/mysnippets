@@ -58,7 +58,6 @@ class ItemList(Widget):
         self.redraw()
 
     def redraw(self):
-        print("here")
         self.window.clear()
         self.window.box()
         _, width = self.window.getmaxyx()
