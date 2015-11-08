@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# this is edited by myeditor
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
@@ -7,7 +8,6 @@
 # Distributed under terms of the MIT license.
 
 """
-
 """
 
 import curses
@@ -23,6 +23,7 @@ def rectangle(win, begin_y, begin_x, height, width, attr=curses.A_BOLD, focused=
     win.addch(begin_y,        begin_x+width, curses.ACS_URCORNER,  attr)
     win.addch(height+begin_y, begin_x,       curses.ACS_LLCORNER,  attr)
     win.addch(begin_y+height, begin_x+width, curses.ACS_LRCORNER,  attr)
+
     if string is not None:
         temp = int((width - len(string))/2) * ' ' + string
         temp += (width - len(temp) - 1) * ' '
@@ -42,7 +43,6 @@ class BaseWindow(object):
 
         self.window.nodelay(1)
         self.window.keypad(1)
-
         #print(self.window.attr())
 
     def display_raw(self, string, x, y, colorpair=1):

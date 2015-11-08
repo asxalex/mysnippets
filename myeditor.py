@@ -52,14 +52,23 @@ class Editor(BaseWindow):
             return
         ## the enter char
         elif ch == 10:
-            before = self.text[line][:position]
-            after = self.text[line][position:]
-            self.text[line] = before
-            self.text.insert(line+1, after)
+            if position == len(self.text[line]):
+                self.text.insert(line+1, "")
+            else:
+                before = self.text[line][:position]
+                after = self.text[line][position:]
+                self.text[line] = before
+                self.text.insert(line+1, after)
             self.cursor = (self.cursor[0] + 1, 0)
         ## the DEL(backspace) key
         elif ch == 127:
             if position == 0:
+                temp = self.text.pop(line)
+                y, x = self.cursor
+                y = y-1
+                x = len(self.text[line-1])
+                self.cursor = (y, x)
+                self.text[line-1] += temp
                 return
             before = self.text[line][:position-1]
             after = self.text[line][position:]
@@ -108,9 +117,14 @@ class Editor(BaseWindow):
         self.cursor = (self.box,0)
 
     def openFile(self, filename):
-        self.filename = filename
-        fp = open(filename)
-        self.text = fp.readlines()
+        try:
+            fp = open(filename)
+            temp = fp.read()
+            self.text = temp.splitlines()
+            fp.close()
+            self.filename = filename
+        except:
+            pass
 
     def loop(self):
         self.redraw()
@@ -243,7 +257,6 @@ class Editor(BaseWindow):
     def handleCommand(self):
         self.display_raw(" "*self.subwidth, 0,self.statusLine)
         a = self.get_param(self.statusLine,0, ":").decode()
-        logger.error("++++in command line, a=%s" % a)
         if a == "wq":
             if self.save():
                 self.clear = True
@@ -263,6 +276,15 @@ class Editor(BaseWindow):
                 sys.exit(0)
             else:
                 self.displayStatusCommand("file changed but not saved")
+        elif a.startswith("!"):
+            pass
+        elif a.startswith("open"):
+            temp = a.split(" ")
+            if len(temp) == 2 and temp[1] != '':
+                filename = temp[1]
+                self.openFile(filename)
+            else:
+                self.displayStatusCommand("filename is not specified")
         else:
             self.displayStatusCommand("unknown command, press <enter> to return")
 
