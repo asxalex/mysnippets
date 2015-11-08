@@ -63,6 +63,8 @@ class Editor(BaseWindow):
         ## the DEL(backspace) key
         elif ch == 127:
             if position == 0:
+                if line == 0:
+                    return
                 temp = self.text.pop(line)
                 y, x = self.cursor
                 y = y-1
