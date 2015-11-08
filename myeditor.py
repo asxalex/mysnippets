@@ -33,34 +33,31 @@ _MODE = {_NORMAL_MODE: "normal", _INSERT_MODE: "insert"}
 
 class Editor(BaseWindow):
 
-    
+## insert the Printable char under _INSERT_MODE    
     def insertPrintableChar(self, ch):
         ch = chr(ch)
-
         line, position = self.getLogicLineFromCursor()
-        #logger.debug("line is %d and position is %d" % (line, position))
-        
         before = self.text[line][:position]
         after = self.text[line][position:]
         self.text[line] = before + ch + after
         self.moveRight()
 
+## insert the unPrintable char under _INSERT_MODE
     def insertUnPrintableChar(self, ch):
         line, position = self.getLogicLineFromCursor()
+        ## the ESC
         if ch == 27:
             self.mode = _NORMAL_MODE
             self.moveLeft()
             return
+        ## the enter char
         elif ch == 10:
             before = self.text[line][:position]
             after = self.text[line][position:]
             self.text[line] = before
             self.text.insert(line+1, after)
-            #self.cursor = self.getCursorFromLogicCursor(line+1, 0)
-            #self.moveDown()
             self.cursor = (self.cursor[0] + 1, 0)
-            #self.cursor = self.getCursorFromLogicCursor(line+1, 0)
-            #logger.error("(%d, %d)" % (self.cursor[0], self.cursor[1]))
+        ## the DEL(backspace) key
         elif ch == 127:
             if position == 0:
                 return
@@ -68,7 +65,6 @@ class Editor(BaseWindow):
             after = self.text[line][position:]
             self.text[line] = before + after
             self.moveLeft()
-            
 
     def __init__(self, begin_x, begin_y, height, width, mainwindow=None, main=False, box=False):
         self.width = width
@@ -76,41 +72,40 @@ class Editor(BaseWindow):
         
         super(Editor, self).__init__(begin_x, begin_y, height, width, mainwindow, main)
 
-        logger.debug("2")
+        ## filename and box
         self.filename = None
         self.box = 1 if box else 0
 
         #line width
         self.linenowidth = 3
+        ## indicating if the changes of the texts are saved
         self.clear = True
 
         # for line no and the space
+        # and create the subwindow
         self.subwidth = self.width-self.linenowidth - 1 - self.box
-
         self.subwin = self.window.subwin(self.height-1, self.subwidth, begin_y, begin_x+4+self.box)
-        self.subwin.box()
 
+        # status line
         self.statusLine = self.height- 1 - self.box
-
-        logger.debug("3")
-        self.first = 0
-
-
-        self.cursor = (self.box,0)
 
         #mode
         self.mode = _NORMAL_MODE
-        
         #replace
         self.replace = True
 
         self.text = [""]
         self.textLines = [0 for i in self.text]
 
+        ## textup and textbottom is used to show the upper bound
+        ## and bottom bound of the text area
         self.textup = self.box
         self.textbottom = self.height - 2 - 2 * self.box
 
+        # first is used to indicating the first line no during the self.text
+        self.first = 0
         self.last = min([self.height-1, len(self.text)])
+        self.cursor = (self.box,0)
 
     def openFile(self, filename):
         self.filename = filename
@@ -135,6 +130,8 @@ class Editor(BaseWindow):
         fp.close()
         return True
 
+## put the cursor to Left, Right, Up, Down, etc.
+## and put the cursor accordingly, not to exceed the EOL
     def moveDown(self, step=1):
         y, x = self.cursor
         y += 1
@@ -208,6 +205,8 @@ class Editor(BaseWindow):
         self.cursor = (y, x)
         self.putCursor()
 
+    ## called while get the user input
+    ## under the normal mode
     def normalCommand(self, key):
         logger.critical("key is %s, KEY_DOWN is %s" % (key, curses.KEY_DOWN))
         y, x = self.cursor
@@ -240,6 +239,7 @@ class Editor(BaseWindow):
         self.display_raw(msg, 0, self.statusLine)
         self.get_ch()
 
+    ## execute the NORMAL MODE command after the ":"
     def handleCommand(self):
         self.display_raw(" "*self.subwidth, 0,self.statusLine)
         a = self.get_param(self.statusLine,0, ":").decode()
@@ -266,6 +266,8 @@ class Editor(BaseWindow):
         else:
             self.displayStatusCommand("unknown command, press <enter> to return")
 
+    ## called while get the user input
+    ## under the insert mode
     def insertCommand(self, key):
         logger.debug("[insert mode]" + str(chr(key)))
         self.clear = False
@@ -275,13 +277,42 @@ class Editor(BaseWindow):
             self.insertUnPrintableChar(key)
         self.redraw()
 
-    def drawLineNo(self, lineno, starty):
-        self.window.addstr(starty, self.box, (("%%%ds"%self.linenowidth)%str(lineno)))
 
+    ## convert the cursor into the text index,
+    ## including the line and position
+    def getLogicLineFromCursor(self):
+        y, x = self.cursor
+        accu = 0; l = 0;
+        line = self.first
+        tempy = y + (1-self.box)
+        for i in range(self.first, len(self.textLines)):
+            line = i
+            l = self.textLines[i]
+            accu += l
+            if accu >= tempy:
+                break
+        position = (l - (accu - tempy) - 1) * self.subwidth + x
+        logger.debug("convert cursor(y=%d, x=%d) to Logic cursor(y=%d, x=%d)" % (y, x, line, position))
+        return line, position
+        
+    ## convert the Logic Cursor(line , position)
+    ## to the cursor in the screen (y, x)
+    def getCursorFromLogicCursor(self, line, width):
+        y = self.box
+        for i in range(self.first, line):
+            y += self.textLines[i]
+        x = width % self.subwidth
+        y += int(width / self.subwidth)
+        logger.debug("convert Logic cursor(y=%d, x=%d) to cursor(y=%d, x=%d)" % (line, width, y, x))
+        return y, x
+
+    ####### draw lines
     def drawStatusLine(self, line, startx):
         logger.debug("draw Status Line")
         self.window.addstr(self.statusLine,startx, line)
-        #pass
+
+    def drawLineNo(self, lineno, starty):
+        self.window.addstr(starty, self.box, (("%%%ds"%self.linenowidth)%str(lineno)))
 
     def drawOneLine(self, lineno, line, startx, starty):
         width = self.subwidth - startx
@@ -298,27 +329,6 @@ class Editor(BaseWindow):
         self.textLines[lineno-1] = len(text)
         return starty + len(text), endless
 
-    def getLogicLineFromCursor(self):
-        y, x = self.cursor
-
-        accu = 0; l = 0;
-        line = self.first
-        tempy = y + (1-self.box)
-        for i in range(self.first, len(self.textLines)):
-            line = i
-            l = self.textLines[i]
-            accu += l
-            logger.debug("l = %d and accu = %d" % (l, accu))
-            logger.debug("line = %d" % (line,))
-            if accu >= tempy:
-                break
-        position = (l - (accu - tempy) - 1) * self.subwidth + x
-        #logger.error("l=%d, accu=%d, tempy=%d, subwidth=%d, line=%d, position=%d" % (l, accu, tempy, self.subwidth, line, position))
-        #logger.error("line=%d, position=%d" % (line, position))
-        return line, position
-        
-
-
     def redraw(self):
         self.subwin.clear()
         self.window.clear()
@@ -327,8 +337,11 @@ class Editor(BaseWindow):
         starty = self.textup
         i = self.first
         end = False
-        logger.debug("4")
+        ## get textLines every time redrawed
+        ## in case of the line change
         self.textLines = [0 for i in self.text]
+
+        ## draw line by line
         while starty <= self.textbottom:
             if i >= len(self.text):
                 self.drawLineNo("~", starty)
@@ -338,8 +351,11 @@ class Editor(BaseWindow):
             i += 1
             end = end or endless
         y, x = self.getLogicLineFromCursor()
+
+        ## draw status line
         self.drawStatusLine("--%s--  %d %d" % (_MODE[self.mode], y+1, x), 3)
-        logger.debug("5")
+
+        ## put cursor
         self.window.refresh()
         self.subwin.move(*self.cursor)
         self.subwin.refresh()
@@ -347,32 +363,18 @@ class Editor(BaseWindow):
         self.last = i-1
         if end:
             self.last -= 1
-        #logger.debug("redraw finished")
 
-    def getCursorFromLogicCursor(self, line, width):
-        y = self.box
-        for i in range(self.first, line):
-            y += self.textLines[i]
-        x = width % self.subwidth
-        y += int(width / self.subwidth)
-        logger.debug("x=%d, y=%d" % (x,y))
-        return y, x
-
+    ## put cursor in the end of the line
     def putCursor(self):
         y, x = self.cursor
         line, pos = self.getLogicLineFromCursor()
-        logger.debug("11")
-
-        #logger.error("+++++++ line=%d, pos=%d" %(line, pos))
 
         if pos > len(self.text[line])-1:
-            logger.debug("12")
             if self.mode == _NORMAL_MODE and len(self.text[line]) != 0:
                 pos = len(self.text[line]) - 1
             else:
                 pos = len(self.text[line])
             self.cursor = self.getCursorFromLogicCursor(line, pos)
-        logger.debug("13")
 
 
 if __name__ == "__main__":
@@ -382,11 +384,6 @@ if __name__ == "__main__":
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.noecho()
         curses.cbreak()
-
-        #subwin = curses.newwin(1,1,5,5)
-        #subwin.box(10)
-        #subwin.refresh()
-        #display_info("here", 12,12, 0, subwin)
 
     def unset_win():
         curses.nocbreak()
