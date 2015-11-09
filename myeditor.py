@@ -194,7 +194,7 @@ class Editor(BaseWindow):
     def moveDown(self, step=1):
         y, x = self.cursor
         y += 1
-        if y >= self.textbottom:
+        if y > self.textbottom:
             if self.last < len(self.text) - 1:
                 self.first += 1
             y -= 1
