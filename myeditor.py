@@ -15,6 +15,7 @@ import textwrap
 import curses
 import log
 import sys
+import os
 
 def mywrap(text, width):
     res = []
@@ -24,7 +25,10 @@ def mywrap(text, width):
     res.append(text[length*width:])
     return res
 
-logger = log.Logger("texteditor").getlogger()
+#logger = log.Logger("texteditor").getlogger()
+logger = log.Logger("texteditor")
+logger.setLevel("debug")
+logger = logger.getlogger()
 
 _NORMAL_MODE = 0
 _INSERT_MODE = 1
@@ -40,7 +44,10 @@ class Editor(BaseWindow):
         before = self.text[line][:position]
         after = self.text[line][position:]
         self.text[line] = before + ch + after
-        self.moveRight()
+        if after == '':
+            self.moveRight(newline=True)
+        else:
+            self.moveRight()
 
 ## insert the unPrintable char under _INSERT_MODE
     def insertUnPrintableChar(self, ch):
@@ -121,15 +128,28 @@ class Editor(BaseWindow):
         # determine if the editor is exiting...
         self.exit = False
 
+        logger.debug("__init__ ends")
+
     def openFile(self, filename):
-        try:
+        self.filename = filename
+        if os.path.isfile(filename):
             fp = open(filename)
             temp = fp.read()
-            self.text = temp.splitlines()
-            fp.close()
-            self.filename = filename
-        except:
-            pass
+            self.text = temp.splitlines() or [""]
+        else:
+            fp = open(filename, "w")
+            self.text = [""]
+        self.textLines = [0 for i in self.text]
+        fp.close()
+
+        #try:
+        #    fp = open(filename)
+        #    temp = fp.read()
+        #    self.text = temp.splitlines()
+        #    fp.close()
+        #    self.filename = filename
+        #except:
+        #    pass
 
     def loop(self):
         self.redraw()
@@ -208,9 +228,9 @@ class Editor(BaseWindow):
         self.cursor = self.getCursorFromLogicCursor(y, x)
         self.putCursor()
 
-    def moveRight(self, step=1):
+    def moveRight(self, step=1, newline=False):
         y, x = self.cursor
-        if x < self.subwidth-1:
+        if x < self.subwidth-1 or newline is True:
             x += 1
         else:
             accu = 0
@@ -271,7 +291,7 @@ class Editor(BaseWindow):
             else:
                 self.displayStatusCommand("not in a file")
                 return
-            sys.exit(0)
+            self.exit = True
         elif a == "w":
             if self.save():
                 self.clear = True
@@ -338,7 +358,7 @@ class Editor(BaseWindow):
 
     ####### draw lines
     def drawStatusLine(self, line, startx):
-        logger.debug("draw Status Line")
+        logger.debug("draw Status Line starts")
         self.window.addstr(self.statusLine,startx, line)
 
     def drawLineNo(self, lineno, starty):
@@ -360,17 +380,16 @@ class Editor(BaseWindow):
         return starty + len(text), endless
 
     def redraw(self):
-        self.subwin.clear()
         self.window.clear()
 
         startx = 0
         starty = self.textup
-        i = self.first
         end = False
         ## get textLines every time redrawed
         ## in case of the line change
         self.textLines = [0 for i in self.text]
 
+        i = self.first
         ## draw line by line
         while starty <= self.textbottom:
             if i >= len(self.text):
@@ -383,12 +402,11 @@ class Editor(BaseWindow):
         y, x = self.getLogicLineFromCursor()
 
         ## draw status line
-        self.drawStatusLine("--%s--  %d %d" % (_MODE[self.mode], y+1, x), 3)
+        self.drawStatusLine("--%s--  %d %d" % (_MODE[self.mode], y+1, x+1), 3)
 
         ## put cursor
         self.window.refresh()
         self.subwin.move(*self.cursor)
-        self.subwin.refresh()
 
         self.last = i-1
         if end:

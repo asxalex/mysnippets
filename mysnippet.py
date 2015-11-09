@@ -49,21 +49,14 @@ class MyItemList(ItemList):
         
         self.conn = sqlite3.connect("./snippet.db")
 
-        cursor = self.conn.cursor()
-        cursor.execute("select id, title from snippet;")
-
-        titles = cursor.fetchall()
-        if len(titles) > 0:
-            self.results = [[i[0], i[1]] for i in titles]
-        else:
-            self.results = []
+        self.updateResults()
+        self.setItem([res[1] for res in self.results])
         logger.debug("%s" % self.results)
 
         #testitem = "abcdefghijklmnopq"
         #self.setItem([res[1] for res in self.results])
         #self.setItem([a for a in testitem])
 
-        cursor.close()
         self.back = False
 
     def quit(self, *args):
@@ -97,17 +90,18 @@ class MyItemList(ItemList):
         cursor.execute("select filename from snippet where id = ?;", (iid,))
         
         content = cursor.fetchone()[0]
+        logger.debug("==== content is %s" % content)
         cursor.close()
 
         (x1, y1) = win.leftup
         (x2, y2) = win.rightbottom
-        edit = Editor(20,0, y,x-(width+1), box=False)
-        edit.openFile(content)
+        edit = Editor(x1,0, y2-y1,x2-x1, box=False)
+        edit.openFile("txtFiles/" + content)
         text = edit.loop()
-        print(text)
+        self.redraw()
 
     def newSnippet(self, whatever):
-        dialog = InputDialog()
+        dialog = InputDialog(mainwindow=self.main_WIN)
         res = dialog.showInput(["title", "alias"])
         dialog.clear()
         uid = str(uuid.uuid1()).replace("-", "")
@@ -115,7 +109,22 @@ class MyItemList(ItemList):
         cursor = self.conn.cursor()
         cursor.execute(sql, (res["title"], res["alias"], uid))
         self.conn.commit()
+
+        # add items
         self.addItem(res["title"])
+        self.updateResults()
+
+    def updateResults(self):
+        cursor = self.conn.cursor()
+        cursor.execute("select id, title from snippet;")
+
+        titles = cursor.fetchall()
+        if len(titles) > 0:
+            self.results = [[i[0], i[1]] for i in titles]
+        else:
+            self.results = []
+        cursor.close()
+
 
 def set_win():
     curses.start_color()
