@@ -44,7 +44,12 @@ class Editor(BaseWindow):
         before = self.text[line][:position]
         after = self.text[line][position:]
         self.text[line] = before + ch + after
+        #self.moveRight()
         if after == '':
+            y, x = self.cursor
+            if y == self.textbottom:
+                self.first += 1
+                self.last += 1
             self.moveRight(newline=True)
         else:
             self.moveRight()
@@ -66,14 +71,26 @@ class Editor(BaseWindow):
                 after = self.text[line][position:]
                 self.text[line] = before
                 self.text.insert(line+1, after)
-            self.cursor = (self.cursor[0] + 1, 0)
+
+            if self.cursor[0] == self.textbottom:
+                self.first += 1
+                self.last += 1
+                self.cursor = (self.cursor[0], 0)
+            else:
+                self.cursor = (self.cursor[0] + 1, 0)
         ## the DEL(backspace) key
         elif ch == 127:
             if position == 0:
                 if line == 0:
                     return
-                temp = self.text.pop(line)
+
                 y, x = self.cursor
+                if self.cursor[0] == self.box:
+                    self.first -= 1
+                    self.last -= 1
+                    y += 1
+
+                temp = self.text.pop(line)
                 y = y-1
                 x = len(self.text[line-1])
                 self.cursor = (y, x)
@@ -372,7 +389,7 @@ class Editor(BaseWindow):
         endless = False
         self.drawLineNo(lineno, starty)
         for i in range(len(text)):
-            if starty+i < self.textbottom:
+            if starty+i <= self.textbottom:
                 self.subwin.addstr(starty+i,startx, text[i])
             else:
                 endless = True
