@@ -86,4 +86,4 @@ and after an "Enter" is entered, a form is shown to gather your info :)
 
 
 ## Editor
-The editor is still at construction and it supports basic operations at present.
+The editor is still in construction and it supports basic operations at present.

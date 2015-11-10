@@ -126,34 +126,8 @@ class MyItemList(ItemList):
         cursor.close()
 
 
-def set_win():
-    curses.start_color()
-    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
-    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
-    curses.noecho()
-    curses.cbreak()
-
-def unset_win():
-    curses.nocbreak()
-    curses.echo()
-    curses.endwin()
-
-def get_param(prompt_string, x=2, y=2, win=None):
-    global myscreen
-    if win is None:
-        win = myscreen
-    win.clear()
-    win.box()
-    win.addstr(y, x, prompt_string)
-    win.refresh()
-    win.nodelay(0)
-    curses.echo()
-    input = win.getstr(10, 10, 60)
-    curses.noecho()
-    win.nodelay(1)
-    return input
-
 if __name__ == "__main__":
+    from misc import set_win, unset_win
     try:
         main = BaseWindow(main=True)
         y, x = main.getWindow().getmaxyx()
