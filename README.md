@@ -46,18 +46,7 @@ def unset_win():
 
 and it runs like this:
 
-```
-┌────────┐
-│i       │
-│j       │
-│k       │
-│l       │
-│m       │
-│n   =>  │
-│o       │
-│abcdefg │
-└────────┘
-```
+![img](http://i12.tietuku.com/0e97635b462b2922s.png)
 
 The ItemList uses vim-like keystroke to move between the items(k for up and j for down), and q for quitting.
 
