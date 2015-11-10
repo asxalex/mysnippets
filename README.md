@@ -78,43 +78,12 @@ if __name__ == "__main__":
 
 Run it and it first prompts like this (use h for left and l for right):
 
-```
-     ┌────────────────────────────────────────────────┐
-     │                                                │
-     │            Are you sure to quit?               │
-     │                                                │
-     │                                                │
-     │    ┌────┐                             ┌────┐   │
-     │    │ No │                             │ Yes│   │
-     │    └────┘                             └────┘   │
-     │                                                │
-     └────────────────────────────────────────────────┘
-```
+![img](http://i12.tietuku.com/37e49158cd5bf189s.png)
 
 and after an "Enter" is entered, a form is shown to gather your info :)
 
-```
-    ┌────────────────────────────────────────────────┐
-    │                                                │
-    │                                                │
-    │                                                │
-    │                                                │
-    │            Input your information              │
-    │                                                │
-    │                                                │
-    │                                                │
-    │                                                │
-    │                                                │
-    │                                                │
-    │     name:                                      │
-    │                                                │
-    │                                                │
-    │     age:                                       │
-    │                                                │
-    │                                                │
-    │     gender:                                    │
-    └────────────────────────────────────────────────┘
-```
+![img](http://i12.tietuku.com/907c4752f0ad45c6s.png)
+
 
 ## Editor
 The editor is still at construction and it supports basic operations at present.
