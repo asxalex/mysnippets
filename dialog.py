@@ -186,3 +186,21 @@ class YesNoDialog(Dialog):
             self.left_or_right()
 
         return self.choices[self.keys[self.focus]]
+
+if __name__ == "__main__":
+    from misc import set_win, unset_win
+    from base import BaseWindow
+    try:
+        main = BaseWindow(main=True)
+
+        set_win()
+        dialog1 = YesNoDialog(mainwindow=main)
+        dialog1.promptYesOrNo("Are you sure to quit?")
+        dialog1.clear()
+
+        dialog = InputDialog(mainwindow=main)
+        dialog.showInput(["name", "age", "gender"], text="Input your information")
+    except Exception as e:
+        print(type(e), e)
+    finally:
+        unset_win()

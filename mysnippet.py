@@ -95,7 +95,7 @@ class MyItemList(ItemList):
 
         (x1, y1) = win.leftup
         (x2, y2) = win.rightbottom
-        edit = Editor(x1,0, y2-y1,x2-x1, box=False)
+        edit = Editor(x1,0, y2-y1,x2-x1, box=True)
         edit.openFile("txtFiles/" + content)
         text = edit.loop()
         self.redraw()
@@ -116,11 +116,11 @@ class MyItemList(ItemList):
 
     def updateResults(self):
         cursor = self.conn.cursor()
-        cursor.execute("select id, title from snippet;")
+        cursor.execute("select id, title, filename from snippet;")
 
         titles = cursor.fetchall()
         if len(titles) > 0:
-            self.results = [[i[0], i[1]] for i in titles]
+            self.results = [[i[0], i[1], i[2]] for i in titles]
         else:
             self.results = []
         cursor.close()
@@ -132,11 +132,6 @@ def set_win():
     curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
     curses.noecho()
     curses.cbreak()
-
-    #subwin = curses.newwin(1,1,5,5)
-    #subwin.box(10)
-    #subwin.refresh()
-    #display_info("here", 12,12, 0, subwin)
 
 def unset_win():
     curses.nocbreak()
