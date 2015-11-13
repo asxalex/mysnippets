@@ -18,22 +18,28 @@ import sys
 import os
 import math
 import curses.ascii
+import pyperclip
 
 if sys.version_info.major < 3:
     def CTRL(key):
-        return curses.ascii.ctrl(byte(key))
+        return ord(curses.ascii.ctrl(byte(key)))
     def ASCII(key):
         return curses.ascii.ascii(byte(key))
 else:
     def CTRL(key):
-        return curses.ascii.ctrl(key)
+        return ord(curses.ascii.ctrl(key))
     def ASCII(key):
-        return curses.ascii.ascii(key)
+        return curses.ascii.ascii(ord(key))
 
 #logger = log.Logger("texteditor").getlogger()
 logger = log.Logger("texteditor")
 logger.setLevel("info")
 logger = logger.getlogger()
+
+_COLOR_RED = 2
+_COLOR_GREEN = 1
+_COLOR_YELLOW = 3
+_COLOR_WHITE = 4
 
 def mywrap(text, width):
     res = []
@@ -45,60 +51,59 @@ def mywrap(text, width):
 
 _NORMAL_MODE = 0
 _INSERT_MODE = 1
+_TAB_WIDTH = 400
 
 _MODE = {_NORMAL_MODE: "normal", _INSERT_MODE: "insert"}
 
 class Editor(BaseWindow):
 
-## insert the unPrintable char under _INSERT_MODE
+    ## insert the unPrintable char under _INSERT_MODE
     def insertUnPrintableChar(self, ch):
-        line, position = self.getLogicLineFromCursor()
-        ## the ESC
-        if ch == 27:
-            self.mode = _NORMAL_MODE
-            self.moveLeft()
-            return
-        ## the enter char
-        elif ch == 10:
-            if position == len(self.text[line]):
-                self.text.insert(line+1, "")
-            else:
-                before = self.text[line][:position]
-                after = self.text[line][position:]
-                self.text[line] = before
-                self.text.insert(line+1, after)
+        pass
 
-            if self.cursor[0] == self.textbottom:
-                self.scrollDown()
-                #self.cursor = (self.cursor[0], 0)
-            y, _ = self.cursor
-            self.cursor = (y + 1, 0)
-            self.getLineLength()
-        ## the DEL(backspace) key
-        elif ch == 127:
-            self.deleteChar(backward=True)
-
-## insert the Printable char under _INSERT_MODE    
-    def insertPrintableChar(self, ch):
-        ch = chr(ch)
+    ## insert str under current cursor
+    def insertstr(self, s=" " * _TAB_WIDTH, length=None):
+        self.clear = False
+        length = length if length is not None else len(s)
         line, position = self.getLogicLineFromCursor()
         before = self.text[line][:position]
         after = self.text[line][position:]
-        self.text[line] = before + ch + after
-        #self.moveRight()
-        if after == '':
-            y, x = self.cursor
-            if y == self.textbottom:
-                self.scrollDown(1)
-            self.moveRight(newline=True)
-        else:
-            self.moveRight()
+        self.text[line] = before + s + after
+        self.moveRight(length)
 
-    def __init__(self, begin_x, begin_y, height, width, mainwindow=None, main=False, box=False):
+    ## insert a "\n" char
+    def nextLine(self):
+        self.clear = False
+        line, position = self.getLogicLineFromCursor()
+        if position == len(self.text[line]):
+            self.text.insert(line+1, "")
+        else:
+            before = self.text[line][:position]
+            after = self.text[line][position:]
+            self.text[line] = before
+            self.text.insert(line+1, after)
+
+        if self.cursor[0] == self.textbottom:
+            self.scrollDown()
+            #self.cursor = (self.cursor[0], 0)
+        y, _ = self.cursor
+        self.cursor = (y + 1, 0)
+        self.getLineLength()
+
+
+
+## insert the Printable char under _INSERT_MODE    
+    def insertPrintableChar(self, ch, length=1):
+        ch = chr(ch)
+        self.insertstr(ch)
+
+    def __init__(self, begin_x, begin_y, height, width, 
+            mainwindow=None, main=False, box=False):
         self.width = width
         self.height = height
         
-        super(Editor, self).__init__(begin_x, begin_y, height, width, mainwindow, main)
+        super(Editor, self).__init__(begin_x, begin_y, height, width, 
+                mainwindow, main)
 
         ## filename and box
         self.filename = None
@@ -116,19 +121,20 @@ class Editor(BaseWindow):
 
         # status line
         self.statusLine = self.height- 1 - self.box
+        self.needRedraw = True
 
         #mode
         self.mode = _NORMAL_MODE
         #replace
         self.replace = True
 
-        self.text = ["absdlfasjdflkasjdflaskjdfl", "ladsfjlskdfjlsdkfjlsdfjklsajflaksdjflaksfdjlakdjsflaskdjlaskjdflasdkjlsadfjlsdkjflaskjdflaskdjlaskjdlaskjdlaskjdlaksjflaksjflksjdflskjfdlsjkf", "                   ", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "","","sldf", "", "", "", "", "", "", "", "", ""]
+        self.text = [""]
         self.getLineLength()
 
         ## textup and textbottom is used to show the upper bound
         ## and bottom bound of the text area
         self.textup = self.box
-        self.textbottom = self.height - 2 - 2 * self.box
+        self.textbottom = self.height - 2 - 1 * self.box
 
         # first is used to indicating the first line no during the self.text
         self.last = min([self.height-1, len(self.text)])
@@ -145,8 +151,13 @@ class Editor(BaseWindow):
                 CTRL("b"): self.moveLeft,
                 CTRL("n"): self.moveDown,
                 CTRL("p"): self.moveUp,
+                CTRL("a"): self.moveTop,
+                CTRL("e"): self.moveEnd,
+                CTRL("v"): self.paste,
+                ASCII("\n"): self.nextLine,
                 curses.ascii.DEL: self.deleteChar,
                 curses.ascii.ESC: self.NormalMode,
+                curses.ascii.TAB: self.insertstr,
                 }
 
         self.normalModeKeys = {
@@ -156,9 +167,50 @@ class Editor(BaseWindow):
                 ASCII("l"): self.moveRight,
                 ASCII("x"): self.deleteChar,
                 ASCII("i"): self.InsertMode,
+                ASCII("G"): self.scrollBottom,
+                ASCII("B"): self.scrollBeginning,
+                ASCII("D"): self.deleteLine,
+                CTRL("b"): self.scrollUpScreen,
+                CTRL("f"): self.scrollDownScreen,
+                CTRL("u"): self.useThis,
                 }
 
         logger.debug("__init__ ends")
+
+    ## copy the text in the editor to clipboard
+    def useThis(self):
+        pyperclip.copy('\n'.join(self.text))
+        self.drawStatusLine("text copied to clipboard!", 1 + self.box, _COLOR_GREEN)
+        self.needRedraw = False
+
+    ## paste the text in the clipboard to the editor
+    def paste(self):
+        clip = pyperclip.paste().splitlines()
+        for line in clip:
+            self.insertstr(line)
+            self.nextLine()
+        
+    ## save the text to the file
+    def save(self):
+        if self.filename is None:
+            return False
+        fp = open(self.filename, "w")
+        fp.write('\n'.join(self.text))
+        fp.close()
+        return True
+
+    def openFile(self, filename):
+        self.filename = filename
+        if os.path.isfile(filename):
+            fp = open(filename)
+            temp = fp.read()
+            self.text = temp.splitlines() or [""]
+        else:
+            fp = open(filename, "w")
+            self.text = [""]
+        self.pline = 0
+        self.getLineLength()
+        fp.close()
 
     ## convert the cursor into the text index,
     ## including the line and position
@@ -175,7 +227,8 @@ class Editor(BaseWindow):
             if accu >= tempy:
                 break
         position = (l - (accu - tempy) - 1) * self.subwidth + x
-        logger.debug("convert cursor(y=%d, x=%d) to Logic cursor(y=%d, x=%d)" % (y, x, line, position))
+        logger.debug("convert cursor(y=%d, x=%d) to Logic cursor(y=%d, x=%d)" 
+                % (y, x, line, position))
         return line, position
     
     ## convert the Logic Cursor(line , position)
@@ -187,9 +240,11 @@ class Editor(BaseWindow):
             y += self.textLines[i]
         x = width % self.subwidth
         y += int(width / self.subwidth)
-        logger.debug("convert Logic cursor(y=%d, x=%d) to cursor(y=%d, x=%d)" % (line, width, y, x))
+        logger.debug("convert Logic cursor(y=%d, x=%d) to cursor(y=%d, x=%d)"
+                % (line, width, y, x))
         return y, x
 
+    ## scrollDown step plines
     def scrollDown(self, step=1):
         y, x = self.cursor
         temp = self.pline
@@ -203,13 +258,31 @@ class Editor(BaseWindow):
             self.pline += step
             ystep = step
         
-        if y - ystep < 0:
-            y = 0
+        if y - ystep < self.box:
+            y = self.box
         else:
             y -= ystep
         self.cursor = (y, x)
         logger.info("+++++the cursor is (%d, %d)" % self.cursor)
         return scrolled
+
+    def scrollUpScreen(self):
+        step = self.textbottom - self.textup
+        self.scrollUp(step)
+
+    def scrollDownScreen(self):
+        step = self.textbottom - self.textup
+        self.scrollDown(step)
+
+    def scrollBottom(self):
+        y, x = self.cursor
+        step = sum(self.textLines) - self.pline
+        self.scrollDown(step)
+
+    def scrollBeginning(self):
+        y, x = self.cursor
+        step = self.pline + y
+        self.scrollUp(step)
 
     def scrollUp(self, step=1):
         y, x = self.cursor
@@ -238,9 +311,9 @@ class Editor(BaseWindow):
         if y > self.box:
             y, x = self.getCursorFromLogicCursor(line, pos)
         else:
-            if y == self.box:
+            if y == self.box and x == 0:
                 self.scrollUp()
-                y, x = self.getCursorFromLogicCursor(line, pos)
+            y, x = self.getCursorFromLogicCursor(line, pos)
         self.cursor = (y, x)
         self.putCursor()
 
@@ -248,11 +321,15 @@ class Editor(BaseWindow):
         y, x = self.cursor
         line, pos = self.getLogicLineFromCursor()
         pos = len(self.text[line]) if pos+step > len(self.text[line]) else pos+step
-        if y < self.textbottom:
+        temp = math.ceil((step - (self.subwidth - x)) / self.subwidth)
+        if y + temp <= self.textbottom:
             y, x = self.getCursorFromLogicCursor(line, pos)
         else:
-            if y == self.textbottom and self.scrollDown():
-                y, x = self.getCursorFromLogicCursor(line, pos)
+            #if y == self.textbottom and x + step > self.subwidth-1:
+            #    self.scrollDown(step % self.subwidth)
+            logger.info("scroll down %d lines" % (y +temp-self.textbottom))
+            self.scrollDown(y + temp - self.textbottom)
+            y, x = self.getCursorFromLogicCursor(line, pos)
         self.cursor = (y, x)
         self.putCursor()
 
@@ -270,9 +347,14 @@ class Editor(BaseWindow):
 
     def InsertMode(self):
         self.mode = _INSERT_MODE
+        self.putCursor()
 
     def NormalMode(self):
+        mode = self.mode
         self.mode = _NORMAL_MODE
+        if mode == _INSERT_MODE:
+            self.moveLeft()
+        self.putCursor()
 
 
     def moveEnd(self):
@@ -290,7 +372,7 @@ class Editor(BaseWindow):
         self.cursor = (y, x)
         self.putCursor()
 
-    def moveUp(self):
+    def moveUp(self, step=1):
         y, x = self.cursor
         if y == self.box:
             scrolled = self.scrollUp()
@@ -306,7 +388,6 @@ class Editor(BaseWindow):
         if y == self.textbottom:
             scrolled = self.scrollDown()
             if not scrolled:
-                logger.info("======= not scrolled Down =========")
                 return
         else:
             p = self.pline + (y-self.box)
@@ -320,6 +401,7 @@ class Editor(BaseWindow):
         self.cursor = (y, x)
         self.putCursor()
 
+    ## update textLine
     def getLineLength(self):
         self.textLines = [math.ceil(len(i)/self.subwidth) or 1 for i in self.text]
 
@@ -329,8 +411,6 @@ class Editor(BaseWindow):
             pline = self.pline
         accu = 0
         temp = 0
-        logger.debug("in getLineFromPline self.pline=%d" % pline)
-        logger.debug("self.textLines = %s" % self.textLines)
         for i in range(len(self.textLines)):
             accu += self.textLines[i]
             temp = i
@@ -341,10 +421,12 @@ class Editor(BaseWindow):
         index = self.textLines[temp] - (accu - pline)
         return temp, index
 
-    def drawLineNo(self, lineno, line):
-        self.window.addstr(line,self.box, (("%%%ds" % self.linenowidth) % str(lineno)))
+    def drawLineNo(self, lineno, line, colorpair=3):
+        self.window.addstr(line,self.box, 
+                (("%%%ds" % self.linenowidth) % str(lineno)), 
+                curses.color_pair(colorpair))
 
-    def drawOneLine(self, lineno, text, starty, startx, fromindex):
+    def drawOneLine(self, lineno, text, starty, startx, fromindex, colorpair=1):
         tempText = mywrap(text, self.subwidth) or [""]
         accu = 0
         if fromindex == 0:
@@ -352,7 +434,8 @@ class Editor(BaseWindow):
         for i in range(len(tempText)):
             if starty + i <= self.textbottom and fromindex+i < len(tempText):
                 content = tempText[fromindex + i]
-                self.subwin.addstr(starty+i,startx, content)
+                self.subwin.addstr(starty+i,startx, content, 
+                        curses.color_pair(colorpair))
                 accu += 1
             else:
                 break
@@ -361,21 +444,34 @@ class Editor(BaseWindow):
             
 
     def redraw(self):
-        self.window.clear()
         pline = self.pline
         line, index = self.getLineFromPline()
-        logger.debug("getLineFromPline line=%d, index=%d" % (line, index))
         first = self.textup
         linebais = 0
+        startx = 0
+        self.window.clear()
         while first <= self.textbottom:
             if line + linebais >= len(self.text):
                 self.drawLineNo("~", first)
                 first += 1
                 continue
-            first = self.drawOneLine(line+linebais+1, self.text[line+linebais], first, self.box, index)
+            first = self.drawOneLine(line+linebais+1, 
+                    self.text[line+linebais], first, startx, index)
             index = 0
             linebais += 1
         self.subwin.move(*self.cursor)
+        if self.box:
+            self.window.box()
+        ## draw status line
+        line, pos = self.getLogicLineFromCursor()
+        self.drawStatusLine("--%s--  %d %d" % (_MODE[self.mode], line+1, pos+1), 
+                3, _COLOR_WHITE)
+
+    def drawStatusLine(self, line, startx=None, colorpair=_COLOR_RED):
+        startx = self.box if startx is None else startx
+        self.window.addstr(self.statusLine, self.box, 
+                ' ' * (self.subwidth-1-startx))
+        self.window.addstr(self.statusLine,startx, line, curses.color_pair(colorpair))
         self.window.refresh()
             
     ## put cursor in the end of the line
@@ -383,7 +479,7 @@ class Editor(BaseWindow):
         y, x = self.cursor
         line, pos = self.getLogicLineFromCursor()
 
-        logger.info("len is %d, pos=%d" %(len(self.text[line]), pos))
+        logger.info("len is %d, pos=%d" %(line, pos))
         if pos > len(self.text[line])-1:
             logger.info("in putCursor")
             temp = len(self.text[line]) + self.mode - 1
@@ -396,52 +492,55 @@ class Editor(BaseWindow):
     ## called while get the user input
     ## under the normal mode
     def normalCommand(self, key):
-        logger.critical("key is %s, ASCII(key) is %s" % (key, curses.ascii.ascii(curses.KEY_RIGHT)))
-        key = chr(key)
-        a = self.normalModeKeys.get(ASCII(key), self.noAction)()
-        # if key == ord("a"):
-        #     self.mode = _INSERT_MODE
-        #     self.moveRight()
-        # elif key == ord("A"):
-        #     self.mode = _INSERT_MODE
-        #     self.moveEnd()
-        # elif key == ord("dd"):
-        #     self.deleteLine()
-        # elif key == ord("I"):
-        #     self.mode = _INSERT_MODE
-        #     self.moveTop()
-        # elif key == ord(":"):
-        #     self.handleCommand()
+        logger.debug("key is %s" % key)
+        if key in self.normalModeKeys.keys():
+            a = self.normalModeKeys.get(key, self.noAction)()
+        else:
+            #key = ord(key)
+            if key == ord("a"):
+                self.mode = _INSERT_MODE
+                self.moveRight()
+            elif key == ord("A"):
+                self.mode = _INSERT_MODE
+                self.moveEnd()
+            elif key == ord("d"):
+                self.deleteLine()
+            elif key == ord("I"):
+                self.mode = _INSERT_MODE
+                self.moveTop()
+            elif key == ord(":"):
+                self.handleCommand()
+        if not self.needRedraw:
+            self.needRedraw = True
+            logger.info("need not redraw")
+            return
         self.redraw()
-
-    def displayStatusCommand(self, msg):
-        self.display_raw(" "*self.subwidth, 0, self.statusLine)
-        self.display_raw(msg, 0, self.statusLine)
-        self.get_ch()
 
     ## execute the NORMAL MODE command after the ":"
     def handleCommand(self):
-        self.display_raw(" "*self.subwidth, 0,self.statusLine)
-        a = self.get_param(self.statusLine,0, ":").decode()
+        self.needRedraw = False
+        self.display_raw(" "*self.subwidth, self.box,self.statusLine)
+        a = self.get_param(self.statusLine,self.box, ":").decode()
         if a == "wq":
             if self.save():
                 self.clear = True
             else:
-                self.displayStatusCommand("not in a file")
+                self.drawStatusLine("not in a file")
                 return
             self.exit = True
         elif a == "w":
             if self.save():
                 self.clear = True
+                self.drawStatusLine("file saved!", colorpair=_COLOR_GREEN)
             else:
-                self.displayStatusCommand("not in a file")
+                self.drawStatusLine("not in a file")
         elif a == "q!":
             self.exit = True
         elif a == "q":
             if self.clear:
                 self.exit = True
             else:
-                self.displayStatusCommand("file changed but not saved")
+                self.drawStatusLine("file changed but not saved")
         elif a.startswith("!"):
             pass
         elif a.startswith("open"):
@@ -449,21 +548,60 @@ class Editor(BaseWindow):
             if len(temp) == 2 and temp[1] != '':
                 filename = temp[1]
                 self.openFile(filename)
+                self.needRedraw = True
             else:
-                self.displayStatusCommand("filename is not specified")
+                self.drawStatusLine("filename is not specified")
         else:
-            self.displayStatusCommand("unknown command, press <enter> to return")
+            self.drawStatusLine("unknown command")
 
     ## called while get the user input
     ## under the insert mode
     def insertCommand(self, key):
-        logger.debug("[insert mode]" + str(chr(key)))
+        logger.info("[insert mode] %s" % (str(key)))
         self.clear = False
-        if key > 31 and key < 127:
+        if key in self.insertModeKeys.keys():
+            self.insertModeKeys[key]()
+        elif key > 31 and key < 127:
             self.insertPrintableChar(key)
         else:
             self.insertUnPrintableChar(key)
         self.redraw()
+
+    def selfScrollUp(self, step=1):
+        y, x = self.cursor
+        p = self.pline + (y - self.box)
+        line, index = self.getLineFromPline(p)
+
+    def deleteLine(self):
+        self.scrollDown()
+        self.clear = False
+        y, x = self.cursor
+        p = self.pline + (y - self.box)
+        line, index = self.getLineFromPline(p)
+        # delete not the last line
+        logger.info("in delete Line1, line=%d" % line)
+        if line == 0 and len(self.text) == 1:
+            self.pline = 0
+            self.cursor = (self.box, 0)
+            self.text = [""]
+            self.textLines = [1]
+            return
+
+        border = 1 if len(self.text) - 1 == line else 0
+        logger.info("in delete Line2")
+        tempy = y - self.box - index 
+        if tempy < self.textup:
+            self.scrollUp(self.textup - tempy)
+            y, x = self.cursor
+            y += self.textup - tempy 
+            y -= border
+            self.cursor = (y, x)
+        y, x = self.cursor
+        y -= index + border
+        logger.info("the cursor is now (%d, %d)" % self.cursor)
+        self.text.pop(line)
+        self.cursor = (y, 0)
+        self.getLineLength()
 
     def deleteChar(self, backward=False):
         backward = True if self.mode else False
@@ -480,7 +618,8 @@ class Editor(BaseWindow):
             after = self.text[line]
             self.text[line-1] = temp+after
             self.text.pop(line)
-            self.cursor = self.getCursorFromLogicCursor(line-1, len(self.text[line-1]))
+            self.cursor = self.getCursorFromLogicCursor(line-1, 
+                    len(self.text[line-1]))
         else:
             logger.info("in delete2, pos=%d" % pos)
             temp = self.text[line]
@@ -488,8 +627,9 @@ class Editor(BaseWindow):
             after = temp[pos+1:]
             self.text[line] = before+after
 
+        self.putCursor()
+
     def loop(self):
-        self.pline = 10
         self.redraw()
         while True:
             a = self.subwin.getch()
@@ -513,7 +653,7 @@ if __name__ == "__main__":
         y, x = main.getWindow().getmaxyx()
         set_win()
         width = 4
-        edit = Editor(0,0, y,x-(width+1), box=False)
+        edit = Editor(0,0, y,x-(width+1), box=True)
         logger.debug("in main")
         edit.loop()
 

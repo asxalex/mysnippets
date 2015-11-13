@@ -128,6 +128,8 @@ class MyItemList(ItemList):
 
 if __name__ == "__main__":
     from misc import set_win, unset_win
+    import traceback
+    from io import StringIO
     try:
         main = BaseWindow(main=True)
         y, x = main.getWindow().getmaxyx()
@@ -141,8 +143,10 @@ if __name__ == "__main__":
         itemlist.loop(edit)
 
     except Exception as e:
-        print(type(e))
-        print(e)
+        fp = StringIO()
+        traceback.print_exc(file=fp)
+        message = fp.getvalue()
+        logger.critical(message)
     finally:
         unset_win()
 
