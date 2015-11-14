@@ -116,6 +116,7 @@ the keybindings for normal mode:
 |:q!|quit without save|
 
 and the keybindings for insert mode:
+
 |Key|Description|
 |---|---|
 |ctrl+f|move right|
