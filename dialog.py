@@ -158,11 +158,15 @@ class YesNoDialog(Dialog):
                 height = maxy
         super(YesNoDialog, self).__init__(width, height, mainwindow)
 
-    def promptYesOrNo(self, text, choices=None):
+    def promptYesOrNo(self, text, choices=None, revert=False):
         if choices is None:
             choices = OrderedDict()
-            choices["No"] = True
-            choices["Yes"] = False
+            if revert:
+                choices["No"] = True
+                choices["Yes"] = False
+            else:
+                choices["No"] = False
+                choices["Yes"] = True
         self.setChoices(choices)
         self.display_info(text, padding=5)
 

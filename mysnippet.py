@@ -19,7 +19,7 @@ from itemlist import ItemList
 from dialog import YesNoDialog, ProcessDialog, InputDialog
 from myeditor import Editor
 from log import Logger
-
+import sys
 import uuid
 
 #import editor
@@ -27,6 +27,8 @@ import uuid
 logger = Logger("mysnippet")
 logger.setLevel("debug")
 logger = logger.getlogger()
+
+create_table = """create table if not exists snippet (id integer primary key not null, title varchar(50) not null default "", alias varchar(50) not null default "", filename varchar(50) not null default "");"""
 
 class MyItemList(ItemList):
     def __init__(self, begin_x=0, begin_y=0, height=10, width=10, selected=2, normal=1, mainwin=None):
@@ -41,13 +43,19 @@ class MyItemList(ItemList):
         self.addTrigger("n", "new")
         self.connect("new", self.newSnippet)
 
-        self.addTrigger("p", "process")
-        self.connect("process", self.processbar)
+        #self.addTrigger("p", "process")
+        #self.connect("process", self.processbar)
 
-        self.addTrigger("i", "input")
-        self.connect("input", self.inputdia)
+        #self.addTrigger("i", "input")
+        #self.connect("input", self.inputdia)
+
+        self.addTrigger("d", "deleteItem")
+        self.connect("deleteItem", self.deleteItem)
         
         self.conn = sqlite3.connect("./snippet.db")
+        cursor = self.conn.cursor()
+        cursor.execute(create_table)
+        self.conn.commit()
 
         self.updateResults()
         self.setItem([res[1] for res in self.results])
@@ -61,7 +69,7 @@ class MyItemList(ItemList):
 
     def quit(self, *args):
         dialog = YesNoDialog(mainwindow=self.main_WIN)
-        a = dialog.promptYesOrNo("sure to quit?")
+        a = dialog.promptYesOrNo("sure to quit?", revert=True)
         dialog.clear()
         self.redraw()
         #print(a)
@@ -100,9 +108,26 @@ class MyItemList(ItemList):
         text = edit.loop()
         self.redraw()
 
+    def deleteItem(self, whatever):
+        dialog = YesNoDialog(mainwindow=self.main_WIN)
+        delete = dialog.promptYesOrNo("sure to delete?")
+        dialog.clear()
+        
+        if delete:
+            if len(self.results) > self.index:
+                item = self.results[self.index]
+                Id = item[0]
+                self.delItem()
+                cursor = self.conn.cursor()
+                cursor.execute("delete from snippet where id=?;", (Id,))
+                self.conn.commit()
+                self.updateResults()
+        self.redraw()
+
     def newSnippet(self, whatever):
         dialog = InputDialog(mainwindow=self.main_WIN)
-        res = dialog.showInput(["title", "alias"])
+        res = dialog.showInput(["title", "alias"],
+                text="input the info of the snippet:")
         dialog.clear()
         uid = str(uuid.uuid1()).replace("-", "")
         sql = "insert into snippet (title, alias, filename) values (?, ?, ?);"
@@ -129,7 +154,10 @@ class MyItemList(ItemList):
 if __name__ == "__main__":
     from misc import set_win, unset_win
     import traceback
-    from io import StringIO
+    if sys.version_info.major >= 3:
+        from io import StringIO
+    else:
+        from StringIO import StringIO
     try:
         main = BaseWindow(main=True)
         y, x = main.getWindow().getmaxyx()

@@ -55,7 +55,7 @@ def mywrap(text, width):
 
 _NORMAL_MODE = 0
 _INSERT_MODE = 1
-_TAB_WIDTH = 400
+_TAB_WIDTH = 4
 
 _MODE = {_NORMAL_MODE: "normal", _INSERT_MODE: "insert"}
 
@@ -616,10 +616,10 @@ class Editor(BaseWindow):
             logger.info("in delete1")
             temp = self.text[line-1]
             after = self.text[line]
-            self.text[line-1] = temp+after
-            self.text.pop(line)
             self.cursor = self.getCursorFromLogicCursor(line-1, 
                     len(self.text[line-1]))
+            self.text[line-1] = temp+after
+            self.text.pop(line)
         else:
             temp = self.text[line]
             before = temp[:pos]

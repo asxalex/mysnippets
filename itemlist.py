@@ -93,6 +93,13 @@ class ItemList(Widget):
         self.items.append(itemStr)
         self.redraw()
 
+    def delItem(self):
+        index = self.index
+        if self.index == len(self.items) - 1:
+            self.index -= 1
+        self.items.pop(index)
+        self.redraw()
+
     def setItem(self, itemStrList):
         self.items = itemStrList
         self.redraw()
