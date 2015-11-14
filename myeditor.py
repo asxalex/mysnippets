@@ -22,14 +22,18 @@ import pyperclip
 
 if sys.version_info.major < 3:
     def CTRL(key):
-        return ord(curses.ascii.ctrl(byte(key)))
+        return ord(curses.ascii.ctrl(key))
     def ASCII(key):
-        return curses.ascii.ascii(byte(key))
+        return curses.ascii.ascii(ord(key))
+    def ceil(num):
+        return int(math.ceil(num))
 else:
     def CTRL(key):
         return ord(curses.ascii.ctrl(key))
     def ASCII(key):
         return curses.ascii.ascii(ord(key))
+    def ceil(num):
+        return math.ceil(num)
 
 #logger = log.Logger("texteditor").getlogger()
 logger = log.Logger("texteditor")
@@ -321,7 +325,7 @@ class Editor(BaseWindow):
         y, x = self.cursor
         line, pos = self.getLogicLineFromCursor()
         pos = len(self.text[line]) if pos+step > len(self.text[line]) else pos+step
-        temp = math.ceil((step - (self.subwidth - x)) / self.subwidth)
+        temp = ceil((step - (self.subwidth - x)) / self.subwidth)
         if y + temp <= self.textbottom:
             y, x = self.getCursorFromLogicCursor(line, pos)
         else:
@@ -403,7 +407,7 @@ class Editor(BaseWindow):
 
     ## update textLine
     def getLineLength(self):
-        self.textLines = [math.ceil(len(i)/self.subwidth) or 1 for i in self.text]
+        self.textLines = [ceil(len(i)/self.subwidth) or 1 for i in self.text]
 
     ## returns the line and index of the text from pline
     def getLineFromPline(self, pline=None):
@@ -433,7 +437,8 @@ class Editor(BaseWindow):
             self.drawLineNo(lineno, starty)
         for i in range(len(tempText)):
             if starty + i <= self.textbottom and fromindex+i < len(tempText):
-                content = tempText[fromindex + i]
+                logger.info(str(fromindex + i))
+                content = tempText[int(fromindex + i)]
                 self.subwin.addstr(starty+i,startx, content, 
                         curses.color_pair(colorpair))
                 accu += 1
@@ -573,13 +578,10 @@ class Editor(BaseWindow):
         line, index = self.getLineFromPline(p)
 
     def deleteLine(self):
-        self.scrollDown()
         self.clear = False
         y, x = self.cursor
         p = self.pline + (y - self.box)
         line, index = self.getLineFromPline(p)
-        # delete not the last line
-        logger.info("in delete Line1, line=%d" % line)
         if line == 0 and len(self.text) == 1:
             self.pline = 0
             self.cursor = (self.box, 0)
@@ -588,9 +590,8 @@ class Editor(BaseWindow):
             return
 
         border = 1 if len(self.text) - 1 == line else 0
-        logger.info("in delete Line2")
-        tempy = y - self.box - index 
-        if tempy < self.textup:
+        tempy = y - self.box - index
+        if tempy < self.box and line != 0:
             self.scrollUp(self.textup - tempy)
             y, x = self.cursor
             y += self.textup - tempy 
@@ -598,16 +599,15 @@ class Editor(BaseWindow):
             self.cursor = (y, x)
         y, x = self.cursor
         y -= index + border
-        logger.info("the cursor is now (%d, %d)" % self.cursor)
         self.text.pop(line)
         self.cursor = (y, 0)
         self.getLineLength()
+        self.moveLeft()
 
     def deleteChar(self, backward=False):
         backward = True if self.mode else False
         y, x = self.cursor
         if backward:
-            logger.info("move left in delete char")
             self.moveLeft()
 
         line, pos = self.getLogicLineFromCursor()
@@ -621,7 +621,6 @@ class Editor(BaseWindow):
             self.cursor = self.getCursorFromLogicCursor(line-1, 
                     len(self.text[line-1]))
         else:
-            logger.info("in delete2, pos=%d" % pos)
             temp = self.text[line]
             before = temp[:pos]
             after = temp[pos+1:]
@@ -646,7 +645,10 @@ class Editor(BaseWindow):
 if __name__ == "__main__":
     from misc import set_win, unset_win
     import traceback
-    from io import StringIO
+    if sys.version_info.major >= 3:
+        from io import StringIO
+    else:
+        from StringIO import StringIO
 
     try:
         main = BaseWindow(main=True)

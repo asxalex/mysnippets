@@ -87,3 +87,43 @@ and after an "Enter" is entered, a form is shown to gather your info :)
 
 ## Editor
 The editor is still in construction and it supports basic operations at present.
+
+the editor has two modes(normal mode and insert mode :>)
+
+the keybindings for normal mode:
+
+|Key|Description|
+|----|----|
+|h|move left|
+|j|move down|
+|k|move up|
+|l|move right|
+|x|delete char under cursor|
+|i|go to the insert mode at current position|
+|a|go to the insert mode after the current position|
+|A|go to the insert mode at the end of the line|
+|I|go to the insert mode at the beginning of the line|
+|G|move to bottom|
+|B|scroll to beginning|
+|D|delete current line|
+|ctrl+b|scroll up a screen|
+|ctrl+f|scroll down a screen|
+|ctrl+u|copy the text to the clipboard|
+|:w|write the text into file|
+|:open filename|open file|
+|:wq|save and quit|
+|:q|quit|
+|:q!|quit without save|
+
+and the keybindings for insert mode:
+|Key|Description|
+|---|---|
+|ctrl+f|move right|
+|ctrl+b|move left|
+|ctrl+n|move down|
+|ctrl+p|move up|
+|ctrl+a|move to the beginning of line|
+|ctrl+e|move to the end of line|
+|ctrl+v|paste the content in the clipboard into the editor|
+
+![img](http://i12.tietuku.com/b3f45c8867f3b135.png)
