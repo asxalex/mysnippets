@@ -1,5 +1,14 @@
-curses widgets
+mysnippet
 ===
+mysnippet is used to collect personal code snippets.
+
+![img](http://i5.tietuku.com/11f5965711a97bb0.png)
+
+![img](http://i5.tietuku.com/118e71419aadb3a0.png)
+
+# Related curses widgets
+The widgets written are as follows:
+
 ## itemlist
 Itemlist displays the items as a list. use it as follows:
 
