@@ -1,10 +1,10 @@
 mysnippet
 ===
-mysnippet is used to collect personal code snippets.
+mysnippet is used to collect personal code snippets in command line.
+
+create a new snippet:
 
 ![img](http://i12.tietuku.com/87dd3f4f0b5ae137.png)
-
-![img](http://i12.tietuku.com/2f072b54c806e841.png)
 
 It uses sqlite to store necessary information, including snippet name, alias, filename, etc. The real file is stored in the txtFiles folder.
 
@@ -19,6 +19,8 @@ keystrokes for the application:
 |d|delete current snippet, a dialog will pop up for ensurement|
 
 When a certain snippet is opened, we can edit it, save it, and copy it to the clipboard. Refer to the editor section below for greater details.
+
+![img](http://i12.tietuku.com/2f072b54c806e841.png)
 
 # Related curses widgets
 The widgets written are as follows:
