@@ -2,9 +2,9 @@ mysnippet
 ===
 mysnippet is used to collect personal code snippets.
 
-![img](http://i5.tietuku.com/11f5965711a97bb0.png)
+![img](http://i12.tietuku.com/87dd3f4f0b5ae137.png)
 
-![img](http://i5.tietuku.com/118e71419aadb3a0.png)
+![img](http://i12.tietuku.com/2f072b54c806e841.png)
 
 It uses sqlite to store necessary information, including snippet name, alias, filename, etc. The real file is stored in the txtFiles folder.
 
