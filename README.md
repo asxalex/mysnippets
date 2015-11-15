@@ -6,6 +6,7 @@ mysnippet is used to collect personal code snippets.
 
 ![img](http://i5.tietuku.com/118e71419aadb3a0.png)
 
+
 # Related curses widgets
 The widgets written are as follows:
 
