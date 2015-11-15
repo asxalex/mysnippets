@@ -6,6 +6,19 @@ mysnippet is used to collect personal code snippets.
 
 ![img](http://i5.tietuku.com/118e71419aadb3a0.png)
 
+It uses sqlite to store necessary information, including snippet name, alias, filename, etc. The real file is stored in the txtFiles folder.
+
+keystrokes for the application:
+
+|Key|Action|
+|---|---|
+|n|create a new snippet, a dialog will pop up for necessary information|
+|j|move to next snippet|
+|k|move to previous snippet|
+|l|open the current snippet in the editor|
+|d|delete current snippet, a dialog will pop up for ensurement|
+
+When a certain snippet is opened, we can edit it, save it, and copy it to the clipboard. Refer to the editor section below for greater details.
 
 # Related curses widgets
 The widgets written are as follows:
